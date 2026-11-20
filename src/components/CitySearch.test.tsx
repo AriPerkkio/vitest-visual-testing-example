@@ -7,7 +7,7 @@ import { CitySearch } from "./CitySearch";
 describe.each(themes)("CitySearch (%s)", (theme) => {
   test("empty", async () => {
     const { frame } = await renderThemed(<CitySearch onSelect={() => {}} />, theme, { width: 440 });
-    await expect.element(frame).toMatchScreenshot(`city-search-empty-${theme}`);
+    await expect(frame).toMatchAndAttachScreenshot(`city-search-empty-${theme}`);
   });
 
   test("shows results from the API", async () => {
@@ -24,7 +24,7 @@ describe.each(themes)("CitySearch (%s)", (theme) => {
     await screen.getByRole("searchbox").fill("l");
     // "l" matches Helsinki, Lisbon and London (served by the MSW handler)
     await expect.element(screen.getByRole("option")).toHaveLength(3);
-    await expect.element(frame).toMatchScreenshot(`city-search-results-${theme}`);
+    await expect(frame).toMatchAndAttachScreenshot(`city-search-results-${theme}`);
 
     await screen.getByRole("button", { name: /Lisbon/ }).click();
     expect(onSelect).toHaveBeenCalledWith({ id: "lisbon", name: "Lisbon", country: "PT" });
@@ -42,6 +42,6 @@ describe.each(themes)("CitySearch (%s)", (theme) => {
     );
     await screen.getByRole("searchbox").fill("atlantis");
     await expect.element(screen.getByText("No cities found")).toBeVisible();
-    await expect.element(frame).toMatchScreenshot(`city-search-no-results-${theme}`);
+    await expect(frame).toMatchAndAttachScreenshot(`city-search-no-results-${theme}`);
   });
 });

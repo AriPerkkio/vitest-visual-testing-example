@@ -9,6 +9,6 @@ describe.each(themes)("States (%s)", (theme) => {
       theme,
       { width: 480 },
     );
-    await expect.element(frame).toMatchScreenshot(`error-state-${theme}`);
+    await expect(frame).toMatchAndAttachScreenshot(`error-state-${theme}`);
   });
 });

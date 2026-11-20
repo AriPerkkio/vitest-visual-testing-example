@@ -11,6 +11,6 @@ describe.each(themes)("WeatherDetails (%s)", (theme) => {
       theme,
       { width: 560 },
     );
-    await expect.element(frame).toMatchScreenshot(`weather-details-${theme}`);
+    await expect(frame).toMatchAndAttachScreenshot(`weather-details-${theme}`);
   });
 });

@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll } from "vitest";
 import { worker } from "../mocks/browser";
 import "../styles.css";
+import "./matchers";
 
 // Animations and transitions make screenshots flaky — turn them off for every test.
 const noMotion = document.createElement("style");

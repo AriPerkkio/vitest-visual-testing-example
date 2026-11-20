@@ -13,17 +13,17 @@ function StatefulUnitToggle() {
 describe.each(themes)("controls (%s)", (theme) => {
   test("UnitToggle switches the active segment", async () => {
     const { screen, frame } = await renderThemed(<StatefulUnitToggle />, theme, { width: 160 });
-    await expect.element(frame).toMatchScreenshot(`unit-toggle-metric-${theme}`);
+    await expect(frame).toMatchAndAttachScreenshot(`unit-toggle-metric-${theme}`);
 
     await screen.getByRole("radio", { name: "°F" }).click();
     await expect.element(screen.getByRole("radio", { name: "°F" })).toBeChecked();
-    await expect.element(frame).toMatchScreenshot(`unit-toggle-imperial-${theme}`);
+    await expect(frame).toMatchAndAttachScreenshot(`unit-toggle-imperial-${theme}`);
   });
 
   test("ThemeToggle shows the icon for the current theme", async () => {
     const { frame } = await renderThemed(<ThemeToggle theme={theme} onToggle={() => {}} />, theme, {
       width: 100,
     });
-    await expect.element(frame).toMatchScreenshot(`theme-toggle-${theme}`);
+    await expect(frame).toMatchAndAttachScreenshot(`theme-toggle-${theme}`);
   });
 });

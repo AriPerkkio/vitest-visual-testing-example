@@ -14,9 +14,9 @@ describe.each(themes)("App (%s)", (theme) => {
   test("dashboard", async () => {
     const screen = await render(<App initialTheme={theme} />);
     await expect.element(screen.getByRole("heading", { name: /Helsinki/ })).toBeVisible();
-    await expect
-      .element(page.elementLocator(screen.container))
-      .toMatchScreenshot(`app-helsinki-${theme}`);
+    await expect(page.elementLocator(screen.container)).toMatchAndAttachScreenshot(
+      `app-helsinki-${theme}`,
+    );
   });
 
   test("switching units refetches in °F", async () => {
@@ -25,9 +25,9 @@ describe.each(themes)("App (%s)", (theme) => {
 
     await screen.getByRole("radio", { name: "°F" }).click();
     await expect.element(screen.getByText("Next 24 hours (°F)")).toBeVisible();
-    await expect
-      .element(page.elementLocator(screen.container))
-      .toMatchScreenshot(`app-lisbon-imperial-${theme}`);
+    await expect(page.elementLocator(screen.container)).toMatchAndAttachScreenshot(
+      `app-lisbon-imperial-${theme}`,
+    );
   });
 
   test("selecting a city from search", async () => {
@@ -37,9 +37,9 @@ describe.each(themes)("App (%s)", (theme) => {
     await screen.getByRole("searchbox").fill("cai");
     await screen.getByRole("button", { name: /Cairo/ }).click();
     await expect.element(screen.getByRole("heading", { name: /Cairo/ })).toBeVisible();
-    await expect
-      .element(page.elementLocator(screen.container))
-      .toMatchScreenshot(`app-cairo-${theme}`);
+    await expect(page.elementLocator(screen.container)).toMatchAndAttachScreenshot(
+      `app-cairo-${theme}`,
+    );
   });
 
   test("server error", async () => {
@@ -53,9 +53,9 @@ describe.each(themes)("App (%s)", (theme) => {
     );
     const screen = await render(<App initialTheme={theme} />);
     await expect.element(screen.getByRole("alert")).toBeVisible();
-    await expect
-      .element(page.elementLocator(screen.container))
-      .toMatchScreenshot(`app-error-${theme}`);
+    await expect(page.elementLocator(screen.container)).toMatchAndAttachScreenshot(
+      `app-error-${theme}`,
+    );
   });
 
   test("theme toggle", async () => {

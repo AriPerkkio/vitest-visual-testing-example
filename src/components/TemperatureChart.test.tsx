@@ -11,7 +11,7 @@ describe.each(themes)("TemperatureChart (%s)", (theme) => {
       theme,
       { width: 720 },
     );
-    await expect.element(frame).toMatchScreenshot(`temperature-chart-${theme}`);
+    await expect(frame).toMatchAndAttachScreenshot(`temperature-chart-${theme}`);
   });
 
   test("sub-zero temperatures", async () => {
@@ -21,6 +21,6 @@ describe.each(themes)("TemperatureChart (%s)", (theme) => {
       theme,
       { width: 720 },
     );
-    await expect.element(frame).toMatchScreenshot(`temperature-chart-subzero-${theme}`);
+    await expect(frame).toMatchAndAttachScreenshot(`temperature-chart-subzero-${theme}`);
   });
 });

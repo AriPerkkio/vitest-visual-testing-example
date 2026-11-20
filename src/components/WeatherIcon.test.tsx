@@ -24,6 +24,6 @@ describe.each(themes)("WeatherIcon (%s)", (theme) => {
       theme,
       { width: 520 },
     );
-    await expect.element(frame).toMatchScreenshot(`weather-icons-${theme}`);
+    await expect(frame).toMatchAndAttachScreenshot(`weather-icons-${theme}`);
   });
 });

@@ -13,6 +13,7 @@
     "verbatimModuleSyntax": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "allowImportingTsExtensions": true,
     "types": ["vite/client", "vitest-browser-preact", "@vitest/browser-playwright"]
   },
   "include": ["src", "vite.config.ts", "vitest.config.ts"]
