@@ -5,11 +5,6 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
-    inputs:
-      update-screenshots:
-        description: Regenerate the Linux reference screenshots and commit them to this branch
-        type: boolean
-        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -24,11 +19,10 @@ jobs:
     # Run in the official Playwright image. Its fonts and browser build are pinned,
     # so screenshots render the same on every run. You can also use it locally
     # to generate matching `-linux` references with Docker.
-    # Keep the tag in sync with the `playwright` version in package.json.
+    # Keep the tag in sync with the `playwright` version in package.json, and with
+    # update-screenshots.yml, which generates the references this job compares against.
     container:
       image: mcr.microsoft.com/playwright:v1.65.1-noble
-    permissions:
-      contents: write # only used by the update-screenshots commit step
     steps:
       - name: Ensure git is available
         run: command -v git || (apt-get update && apt-get install -y --no-install-recommends git)
@@ -50,33 +44,57 @@ jobs:
       - run: pnpm typecheck
 
       - name: Visual regression tests
-        if: ${{ !inputs.update-screenshots }}
         run: pnpm test --run
 
-      - name: Update reference screenshots
-        if: ${{ inputs.update-screenshots }}
-        run: pnpm test:update
-
-      - name: Commit updated screenshots
-        if: ${{ inputs.update-screenshots }}
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- ':(glob)**/__screenshots__/**'
-          if git diff --cached --quiet; then
-            echo "Screenshots are already up to date."
-          else
-            git commit -m "test: update linux reference screenshots"
-            git push
-          fi
-
       # Upload the HTML report even when tests fail: that's when you need the diffs.
-      - name: Upload HTML report
-        if: ${{ !cancelled() }}
+      # Pull requests get a regular artifact, which the visual-diff-comment job reads.
+      - name: Upload HTML report (pull request)
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: vitest-report
+          path: .vitest
+          include-hidden-files: true
+
+      - name: Upload HTML report (GitHub Pages)
+        if: ${{ !cancelled() && github.event_name != 'pull_request' }}
         uses: actions/upload-pages-artifact@v5
         with:
           path: .vitest
+
+  # Posts the failed screenshots (reference / actual / diff) as a PR comment.
+  # The images are pushed to a `vrt/pr-<number>` branch and shown through
+  # raw.githubusercontent.com. See scripts/vrt-comment.mjs.
+  # Fork PRs get a read-only token, so they only get the vitest-report artifact.
+  visual-diff-comment:
+    needs: test
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the images to the vrt/pr-<number> branch
+      pull-requests: write # create and update the comment
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts
+
+      # Missing when the test job failed before running the tests; the script
+      # then leaves the comment unchanged.
+      - name: Download HTML report
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: vitest-report
+          path: report
+
+      - name: Post visual differences
+        uses: actions/github-script@v9
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          script: |
+            const { default: run } = await import(`${process.env.GITHUB_WORKSPACE}/scripts/vrt-comment.mjs`);
+            await run({ github, context, core, reportDir: "report", token: process.env.GITHUB_TOKEN });
 
   deploy-report:
     needs: test

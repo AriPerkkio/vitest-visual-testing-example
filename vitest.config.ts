@@ -7,8 +7,11 @@ export default mergeConfig(
   defineConfig({
     test: {
       // On CI, also emit the HTML report (written to .vitest/index.html, together with
-      // screenshot diffs as attachments) and GitHub annotations for failed tests.
-      reporters: process.env.CI ? ["default", "github-actions", "html"] : ["default"],
+      // screenshot diffs as attachments), GitHub annotations for failed tests, and
+      // .vitest/vrt-failures.json for the PR comment with the visual diffs.
+      reporters: process.env.CI
+        ? ["default", "github-actions", "html", "./scripts/vrt-failures-reporter.ts"]
+        : ["default"],
       setupFiles: ["./src/test/setup.ts"],
       coverage: {
         enabled: true,
