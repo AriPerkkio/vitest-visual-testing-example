@@ -4,3 +4,4 @@ dist
 # Reference screenshots live in __screenshots__/ and SHOULD be committed.
 .vitest/
 *.local
+coverage/

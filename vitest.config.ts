@@ -10,6 +10,9 @@ export default mergeConfig(
       // screenshot diffs as attachments) and GitHub annotations for failed tests.
       reporters: process.env.CI ? ["default", "github-actions", "html"] : ["default"],
       setupFiles: ["./src/test/setup.ts"],
+      coverage: {
+        enabled: true,
+      },
       browser: {
         enabled: true,
         headless: true,
