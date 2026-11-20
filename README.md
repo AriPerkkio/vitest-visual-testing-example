@@ -2,6 +2,8 @@
 
 > Highly 🤖-generated source code
 
+[Vitest HTML report hosted at Github Pages](https://ariperkkio.github.io/vitest-visual-testing-example/)
+
 A small Preact + TypeScript weather dashboard with [Vitest browser mode visual regression testing](https://vitest.dev/guide/browser/visual-regression-testing).
 
 - **Preact 11 + TypeScript 7**, built with **Vite 8**
