@@ -56,7 +56,7 @@ export function App({ initialCityId = "helsinki", initialTheme }: Props) {
               width={1010}
               height={240}
             />
-            <ForecastList days={weather.data.daily} />
+            <ForecastList days={weather.data.daily} units={weather.data.units} />
           </div>
         )}
       </main>
