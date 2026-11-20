@@ -1,12 +1,14 @@
-import type { DailyForecast } from "../api/types";
+import type { DailyForecast, Units } from "../api/types";
 import { formatTemp, formatWeekday } from "../format";
+import { temperatureColor } from "../temperatureColor";
 import { WeatherIcon } from "./WeatherIcon";
 
 interface Props {
   days: DailyForecast[];
+  units: Units;
 }
 
-export function ForecastList({ days }: Props) {
+export function ForecastList({ days, units }: Props) {
   const weekMin = Math.min(...days.map((d) => d.low));
   const weekMax = Math.max(...days.map((d) => d.high));
   const span = Math.max(1, weekMax - weekMin);
@@ -33,6 +35,7 @@ export function ForecastList({ days }: Props) {
                 style={{
                   left: `${((day.low - weekMin) / span) * 100}%`,
                   right: `${((weekMax - day.high) / span) * 100}%`,
+                  background: `linear-gradient(90deg, ${temperatureColor(day.low, units)}, ${temperatureColor(day.high, units)})`,
                 }}
               />
             </span>
