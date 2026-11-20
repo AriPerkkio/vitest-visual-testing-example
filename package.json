@@ -1,0 +1,33 @@
+{
+  "name": "vitest-visual-testing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:update": "vitest --run --update",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check"
+  },
+  "dependencies": {
+    "preact": "^11.2.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.13",
+    "@preact/preset-vite": "^2.10.6",
+    "@vitest/browser-playwright": "^5.1.1",
+    "@vitest/ui": "^5.1.1",
+    "msw": "^3.0.7",
+    "oxfmt": "^0.79.0",
+    "playwright": "^1.65.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1",
+    "vitest-browser-preact": "^2.0.0"
+  },
+  "packageManager": "pnpm@10.34.5"
+}

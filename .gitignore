@@ -1,0 +1,6 @@
+node_modules
+dist
+# Diffs/actual images from failed screenshot comparisons.
+# Reference screenshots live in __screenshots__/ and SHOULD be committed.
+.vitest/
+*.local

@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      update-screenshots:
+        description: Regenerate the Linux reference screenshots and commit them to this branch
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Run in the official Playwright image. Its fonts and browser build are pinned,
+    # so screenshots render the same on every run. You can also use it locally
+    # to generate matching `-linux` references with Docker.
+    # Keep the tag in sync with the `playwright` version in package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.1-noble
+    permissions:
+      contents: write # only used by the update-screenshots commit step
+    steps:
+      - name: Ensure git is available
+        run: command -v git || (apt-get update && apt-get install -y --no-install-recommends git)
+
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - run: pnpm typecheck
+
+      - name: Visual regression tests
+        if: ${{ !inputs.update-screenshots }}
+        run: pnpm test --run
+
+      - name: Update reference screenshots
+        if: ${{ inputs.update-screenshots }}
+        run: pnpm test:update
+
+      - name: Commit updated screenshots
+        if: ${{ inputs.update-screenshots }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- ':(glob)**/__screenshots__/**'
+          if git diff --cached --quiet; then
+            echo "Screenshots are already up to date."
+          else
+            git commit -m "test: update linux reference screenshots"
+            git push
+          fi
+
+      # Upload the HTML report even when tests fail: that's when you need the diffs.
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: .vitest
+
+  deploy-report:
+    needs: test
+    # Run even when tests failed, as long as the report was produced.
+    # GitHub Pages environments only accept deployments from the default branch
+    # by default, so PR runs keep the report as a downloadable artifact instead.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.test.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Deploy report to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
