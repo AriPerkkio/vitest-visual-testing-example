@@ -15,7 +15,7 @@ A small Preact + TypeScript weather dashboard with [Vitest browser mode visual r
 
 ```sh
 pnpm install
-pnpm exec playwright install chromium
+pnpm exec playwright install chromium firefox webkit
 
 pnpm dev            # app at http://localhost:5173, API mocked by MSW
 pnpm test           # watch mode

@@ -15,12 +15,16 @@ export default mergeConfig(
       setupFiles: ["./src/test/setup.ts"],
       coverage: {
         enabled: true,
+        provider: "istanbul",
       },
       browser: {
         enabled: true,
         headless: true,
         provider: playwright(),
-        instances: [{ browser: "chromium" }],
+        instances: [
+          { browser: "chromium" },
+          ...(process.env.CI ? [] : ([{ browser: "firefox" }, { browser: "webkit" }] as const)),
+        ],
         // A fixed viewport keeps full-page screenshots stable.
         viewport: { width: 1280, height: 1200 },
         expect: {

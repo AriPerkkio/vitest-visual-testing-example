@@ -20,7 +20,7 @@
     "@babel/core": "^7.29.13",
     "@preact/preset-vite": "^2.10.6",
     "@vitest/browser-playwright": "^5.1.1",
-    "@vitest/coverage-v8": "5.1.1",
+    "@vitest/coverage-istanbul": "5.1.1",
     "@vitest/ui": "^5.1.1",
     "msw": "^3.0.7",
     "oxfmt": "^0.79.0",
