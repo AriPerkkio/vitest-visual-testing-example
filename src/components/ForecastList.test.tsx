@@ -6,7 +6,9 @@ import { ForecastList } from "./ForecastList";
 describe.each(themes)("ForecastList (%s)", (theme) => {
   test("7 days", async () => {
     const { daily } = buildReport("tokyo", "metric")!;
-    const { frame } = await renderThemed(<ForecastList days={daily} />, theme, { width: 640 });
+    const { frame } = await renderThemed(<ForecastList days={daily} units="metric" />, theme, {
+      width: 640,
+    });
     await expect(frame).toMatchAndAttachScreenshot(`forecast-${theme}`);
   });
 });
