@@ -1,4 +1,5 @@
-import { afterAll, afterEach, beforeAll } from "vitest";
+import { afterEach, beforeAll } from "vitest";
+import { commands } from "vitest/browser";
 import { worker } from "../mocks/browser";
 import "../styles.css";
 import "./matchers";
@@ -27,13 +28,17 @@ beforeAll(async () => {
   });
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // Don't let the pointer position of this test hover elements in the next one.
+  await commands.resetMouse();
   // Drop per-test overrides added via `worker.use(...)`.
   worker.resetHandlers();
   delete document.documentElement.dataset.theme;
   localStorage.clear();
 });
 
-afterAll(() => {
-  worker.stop();
-});
+// No `worker.stop()` in `afterAll`. Stopping tells the service worker that this
+// page is gone, and when it was the last page, the worker unregisters itself.
+// The next test file then registers it again, and in Firefox that page's
+// requests can bypass the worker and reach Vite instead. MSW still releases the
+// page when Vitest removes the test file's iframe.

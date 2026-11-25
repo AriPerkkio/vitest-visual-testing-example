@@ -9,6 +9,8 @@ declare module "vitest/browser" {
       base64: string,
       theme: "light" | "dark" | undefined,
     ) => Promise<string>;
+    /** See scripts/reset-mouse-command.ts */
+    resetMouse: () => Promise<void>;
   }
 }
 

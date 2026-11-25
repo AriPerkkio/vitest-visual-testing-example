@@ -1,6 +1,7 @@
 import { defineConfig, mergeConfig } from "vitest/config";
 import { playwright } from "@vitest/browser-playwright";
 import viteConfig from "./vite.config.ts";
+import { resetMouse } from "./scripts/reset-mouse-command.ts";
 import { writeSnapshot } from "./scripts/write-snapshot-command.ts";
 
 export default mergeConfig(
@@ -24,8 +25,9 @@ export default mergeConfig(
         instances: [{ browser: "chromium" }, { browser: "firefox" }, { browser: "webkit" }],
         // A fixed viewport keeps full-page screenshots stable.
         viewport: { width: 1280, height: 1200 },
-        // Used by `toCaptureSnapshot()` to write snapshots/ for Sentry.
-        commands: { writeSnapshot },
+        // writeSnapshot: used by `toCaptureSnapshot()` to write snapshots/ for Sentry.
+        // resetMouse: called after each test in src/test/setup.ts.
+        commands: { writeSnapshot, resetMouse },
       },
     },
   }),
