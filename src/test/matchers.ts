@@ -1,56 +1,78 @@
 import { expect } from "vitest";
-import { server, type Locator } from "vitest/browser";
+import { commands, page, type Locator } from "vitest/browser";
 
-type ScreenshotOptions = Parameters<ReturnType<typeof expect.element>["toMatchScreenshot"]>[1];
+declare module "vitest/browser" {
+  interface BrowserCommands {
+    /** See scripts/write-snapshot-command.ts */
+    writeSnapshot: (
+      name: string,
+      base64: string,
+      theme: "light" | "dark" | undefined,
+    ) => Promise<string>;
+  }
+}
 
 declare module "vitest" {
   interface Matchers<R extends void | Promise<void> = void | Promise<void>, T = unknown> {
     /**
-     * Same as `toMatchScreenshot(name)`, but after a passing comparison it also
-     * attaches the reference image to the test, so Vitest's HTML report shows
-     * every screenshot, not only failed ones.
+     * Captures a screenshot of the element for Sentry Snapshots. It doesn't
+     * compare anything: CI uploads the `snapshots/` directory and Sentry diffs it
+     * against the base commit, then reports the result as a PR check.
+     *
+     * The screenshot is also attached to the test, so Vitest's HTML report shows it.
+     *
+     * A name ending in `-light` or `-dark` sets the canvas theme in Sentry's viewer.
      *
      * Use it with plain `expect(locator)`, **not** `expect.element(locator)`.
-     * The matcher already polls for the element internally. Wrapping it in
-     * `expect.element()` would run it inside the polling loop, which:
-     * - drops the test file from the stack, so the annotation loses its location
-     *   and doesn't show up in the report's Code tab;
-     * - retries a failing comparison until the timeout (only the built-in
-     *   `toMatchScreenshot` name is exempt from that).
+     * The matcher already waits for the element. Wrapping it in `expect.element()`
+     * would retry the whole capture until the timeout, and drop the test file from
+     * the stack, so the annotation would lose its location in the report.
      */
-    toMatchAndAttachScreenshot: (name: string, options?: ScreenshotOptions) => Promise<void>;
+    toCaptureSnapshot: (name: string) => Promise<void>;
   }
 }
 
+/** Consecutive screenshots must be identical before one is accepted. */
+const MAX_ATTEMPTS = 5;
+
 expect.extend({
-  async toMatchAndAttachScreenshot(actual: unknown, name: string, options?: ScreenshotOptions) {
+  async toCaptureSnapshot(actual: unknown, name: string) {
     if (this.isNot) {
-      throw new Error("toMatchAndAttachScreenshot cannot be used with .not");
+      throw new Error("toCaptureSnapshot cannot be used with .not");
     }
     const { task } = this;
     if (!task) {
-      throw new Error("toMatchAndAttachScreenshot can only be used inside a test");
+      throw new Error("toCaptureSnapshot can only be used inside a test");
     }
 
-    // Delegate to the built-in matcher through `expect.element()`, so the element
-    // is polled for until it appears. The built-in `toMatchScreenshot` is exempt
-    // from poll retries; it handles screenshot stability itself. Throws (and
-    // attaches reference/actual/diff images) when the comparison fails.
-    await expect.element(actual as Locator).toMatchScreenshot(name, options);
+    const locator = actual as Locator;
+    await expect.element(locator).toBeVisible();
+    const base64 = await stableScreenshot(locator, name);
+    const theme = name.match(/-(light|dark)$/)?.[1] as "light" | "dark" | undefined;
 
-    // Mirrors Vitest's default `resolveScreenshotPath`:
-    // <test dir>/__screenshots__/<test file>/<name>-<browser>-<platform>.png
-    const testPath = this.testPath ?? task.file.filepath;
-    const separator = testPath.lastIndexOf("/");
-    const dir = testPath.slice(0, separator);
-    const file = testPath.slice(separator + 1);
-    const reference = `${dir}/__screenshots__/${file}/${name}-${server.browser}-${server.platform}.png`;
-
+    await commands.writeSnapshot(name, base64, theme);
     await task.context.annotate(name, "screenshot", {
-      path: reference,
+      body: base64,
       contentType: "image/png",
     });
 
     return { pass: true, message: () => "" };
   },
 });
+
+/**
+ * Takes screenshots until two in a row are identical. `toMatchScreenshot()` did
+ * this for us. Without it, a half-rendered frame would show up in Sentry as a
+ * flaky diff.
+ */
+async function stableScreenshot(locator: Locator, name: string) {
+  let previous = await page.screenshot({ element: locator, save: false });
+  for (let attempt = 1; attempt < MAX_ATTEMPTS; attempt++) {
+    const current = await page.screenshot({ element: locator, save: false });
+    if (current === previous) {
+      return current;
+    }
+    previous = current;
+  }
+  throw new Error(`Screenshot "${name}" kept changing after ${MAX_ATTEMPTS} attempts`);
+}

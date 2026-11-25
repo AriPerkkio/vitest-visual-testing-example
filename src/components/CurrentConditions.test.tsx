@@ -19,7 +19,7 @@ describe.each(themes)("CurrentConditions (%s)", (theme) => {
       theme,
       { width: 420 },
     );
-    await expect(frame).toMatchAndAttachScreenshot(`current-${cityId}-${theme}`);
+    await expect(frame).toCaptureSnapshot(`current-${cityId}-${theme}`);
   });
 
   test("imperial units", async () => {
@@ -34,6 +34,6 @@ describe.each(themes)("CurrentConditions (%s)", (theme) => {
       theme,
       { width: 420 },
     );
-    await expect(frame).toMatchAndAttachScreenshot(`current-lisbon-imperial-${theme}`);
+    await expect(frame).toCaptureSnapshot(`current-lisbon-imperial-${theme}`);
   });
 });

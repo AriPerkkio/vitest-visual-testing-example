@@ -9,7 +9,6 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "test:update": "vitest --run --update",
     "format": "oxfmt",
     "format:check": "oxfmt --check"
   },
@@ -19,10 +18,12 @@
   "devDependencies": {
     "@babel/core": "^7.29.13",
     "@preact/preset-vite": "^2.10.6",
+    "@sentry/cli": "3.8.2",
     "@vitest/browser-playwright": "^5.1.1",
     "@vitest/coverage-istanbul": "5.1.1",
     "@vitest/ui": "^5.1.1",
     "msw": "^3.0.7",
+    "odiff-bin": "^4.5.0",
     "oxfmt": "^0.79.0",
     "playwright": "^1.65.1",
     "typescript": "^7.0.2",

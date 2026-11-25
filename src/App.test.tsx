@@ -14,9 +14,7 @@ describe.each(themes)("App (%s)", (theme) => {
   test("dashboard", async () => {
     const screen = await render(<App initialTheme={theme} />);
     await expect.element(screen.getByRole("heading", { name: /Helsinki/ })).toBeVisible();
-    await expect(page.elementLocator(screen.container)).toMatchAndAttachScreenshot(
-      `app-helsinki-${theme}`,
-    );
+    await expect(page.elementLocator(screen.container)).toCaptureSnapshot(`app-helsinki-${theme}`);
   });
 
   test("switching units refetches in °F", async () => {
@@ -25,7 +23,7 @@ describe.each(themes)("App (%s)", (theme) => {
 
     await screen.getByRole("radio", { name: "°F" }).click();
     await expect.element(screen.getByText("Next 24 hours (°F)")).toBeVisible();
-    await expect(page.elementLocator(screen.container)).toMatchAndAttachScreenshot(
+    await expect(page.elementLocator(screen.container)).toCaptureSnapshot(
       `app-lisbon-imperial-${theme}`,
     );
   });
@@ -37,9 +35,7 @@ describe.each(themes)("App (%s)", (theme) => {
     await screen.getByRole("searchbox").fill("cai");
     await screen.getByRole("button", { name: /Cairo/ }).click();
     await expect.element(screen.getByRole("heading", { name: /Cairo/ })).toBeVisible();
-    await expect(page.elementLocator(screen.container)).toMatchAndAttachScreenshot(
-      `app-cairo-${theme}`,
-    );
+    await expect(page.elementLocator(screen.container)).toCaptureSnapshot(`app-cairo-${theme}`);
   });
 
   test("server error", async () => {
@@ -53,9 +49,7 @@ describe.each(themes)("App (%s)", (theme) => {
     );
     const screen = await render(<App initialTheme={theme} />);
     await expect.element(screen.getByRole("alert")).toBeVisible();
-    await expect(page.elementLocator(screen.container)).toMatchAndAttachScreenshot(
-      `app-error-${theme}`,
-    );
+    await expect(page.elementLocator(screen.container)).toCaptureSnapshot(`app-error-${theme}`);
   });
 
   test("theme toggle", async () => {
