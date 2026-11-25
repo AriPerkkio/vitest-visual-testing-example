@@ -24,10 +24,13 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.65.1-noble
     env:
-      # Repository secret and variables. Fork PRs don't get secrets, so they skip the upload.
+      # The container runs as root, but GitHub sets $HOME to /github/home, which
+      # belongs to another user. Firefox refuses to launch in that case.
+      HOME: /root
+      # Repository secrets. Fork PRs don't get them, so they skip the upload.
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
-      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
     steps:
       - name: Ensure git is available
         run: command -v git || (apt-get update && apt-get install -y --no-install-recommends git)

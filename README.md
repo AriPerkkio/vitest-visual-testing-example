@@ -37,7 +37,7 @@ Fork PRs don't get the `SENTRY_AUTH_TOKEN` secret, so they skip the upload. Thei
 ### Setup
 
 1. Create a Sentry project and an auth token with `project:write` (or an org token with `org:ci`).
-2. In GitHub, add the repository secret `SENTRY_AUTH_TOKEN` and the variables `SENTRY_ORG` and `SENTRY_PROJECT`.
+2. In GitHub, add the repository secrets `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT`.
 3. Install the Sentry GitHub App with **Checks** and **Pull requests** read/write and subscribe it to **Check run** events. Sentry needs it to post the status check.
 
 ### Comparing locally (experimental)
