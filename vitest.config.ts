@@ -2,7 +2,7 @@ import { defineConfig, mergeConfig } from "vitest/config";
 import { playwright } from "@vitest/browser-playwright";
 import viteConfig from "./vite.config.ts";
 import { resetMouse } from "./scripts/reset-mouse-command.ts";
-import { writeSnapshot } from "./scripts/write-snapshot-command.ts";
+import { resolveBaselinePath, writeSnapshot } from "./scripts/write-snapshot-command.ts";
 
 export default mergeConfig(
   viteConfig,
@@ -25,9 +25,23 @@ export default mergeConfig(
         instances: [{ browser: "chromium" }, { browser: "firefox" }, { browser: "webkit" }],
         // A fixed viewport keeps full-page screenshots stable.
         viewport: { width: 1280, height: 1200 },
-        // writeSnapshot: used by `toCaptureSnapshot()` to write snapshots/ for Sentry.
+        // writeSnapshot: used by `toCaptureSnapshot()` to write .vitest/sentry/.
         // resetMouse: called after each test in src/test/setup.ts.
         commands: { writeSnapshot, resetMouse },
+        expect: {
+          // Only used locally, to compare against the baseline from `pnpm vrt:baseline`.
+          toMatchScreenshot: {
+            resolveScreenshotPath: resolveBaselinePath,
+            comparatorName: "pixelmatch",
+            comparatorOptions: {
+              // Per-pixel color distance (0–1). Lower is stricter.
+              threshold: 0.1,
+              // Baseline and current run render on the same machine, so only a
+              // handful of pixels may differ.
+              allowedMismatchedPixels: 10,
+            },
+          },
+        },
       },
     },
   }),

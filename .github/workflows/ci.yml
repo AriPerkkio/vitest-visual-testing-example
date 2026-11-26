@@ -63,7 +63,7 @@ jobs:
 
       - run: pnpm typecheck
 
-      # Writes every screenshot to snapshots/. Visual changes don't fail this step:
+      # Writes every screenshot to .vitest/sentry/__screenshots__/. Visual changes don't fail this step:
       # Sentry compares the snapshots and reports them as the "Snapshot Testing" check.
       - name: Tests
         run: pnpm test --run
@@ -72,7 +72,12 @@ jobs:
       # show up in Sentry as removed snapshots.
       - name: Upload snapshots to Sentry
         if: ${{ success() && env.SENTRY_AUTH_TOKEN != '' }}
-        run: pnpm exec sentry-cli snapshots upload snapshots --app-id skycast-web
+        run: pnpm exec sentry-cli snapshots upload .vitest/sentry/__screenshots__ --app-id skycast-web
+
+      # The report embeds every screenshot already. Don't publish them twice.
+      - name: Remove screenshots from the report directory
+        if: ${{ !cancelled() }}
+        run: rm -rf .vitest/sentry
 
       # Upload the HTML report even when tests fail. Pull requests get a regular
       # artifact, other runs deploy it to GitHub Pages.
