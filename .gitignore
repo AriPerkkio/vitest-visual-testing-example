@@ -1,7 +1,8 @@
 node_modules
 dist
-# Diffs/actual images from failed screenshot comparisons.
-# Reference screenshots live in __screenshots__/ and SHOULD be committed.
+# HTML report, and the screenshots and local baseline in .vitest/sentry/.
+# Sentry keeps the CI baselines, so screenshots aren't committed.
 .vitest/
 *.local
+.env
 coverage/

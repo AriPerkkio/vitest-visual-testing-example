@@ -8,7 +8,9 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel runs on main: each main commit's upload is the Sentry baseline
+  # for PRs branched from it. A skipped commit would leave those PRs without one.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -16,18 +18,36 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # Run in the official Playwright image. Its fonts and browser build are pinned,
-    # so screenshots render the same on every run. You can also use it locally
-    # to generate matching `-linux` references with Docker.
-    # Keep the tag in sync with the `playwright` version in package.json, and with
-    # update-screenshots.yml, which generates the references this job compares against.
+    # Run in the official Playwright image. Its fonts and browser builds are pinned,
+    # so screenshots render the same on every run.
+    # Keep the tag in sync with the `playwright` version in package.json.
     container:
       image: mcr.microsoft.com/playwright:v1.65.1-noble
+    env:
+      # The container runs as root, but GitHub sets $HOME to /github/home, which
+      # belongs to another user. Firefox refuses to launch in that case.
+      HOME: /root
+      # Repository secrets. Fork PRs don't get them, so they skip the upload.
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
     steps:
       - name: Ensure git is available
         run: command -v git || (apt-get update && apt-get install -y --no-install-recommends git)
 
       - uses: actions/checkout@v7
+        with:
+          # Sentry matches uploads by commit. Check out the PR head, not GitHub's
+          # merge commit, and fetch the history so sentry-cli can find the merge-base
+          # with main, whose upload is the baseline.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      # The container runs as root, while the workspace belongs to the runner user.
+      # Without this, git refuses to read the repository and sentry-cli can't
+      # detect the commit.
+      - name: Mark the workspace as safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - uses: pnpm/action-setup@v6
 
@@ -43,11 +63,24 @@ jobs:
 
       - run: pnpm typecheck
 
-      - name: Visual regression tests
+      # Writes every screenshot to .vitest/sentry/__screenshots__/. Visual changes don't fail this step:
+      # Sentry compares the snapshots and reports them as the "Snapshot Testing" check.
+      - name: Tests
         run: pnpm test --run
 
-      # Upload the HTML report even when tests fail: that's when you need the diffs.
-      # Pull requests get a regular artifact, which the visual-diff-comment job reads.
+      # Only upload a complete set. If tests failed, missing screenshots would
+      # show up in Sentry as removed snapshots.
+      - name: Upload snapshots to Sentry
+        if: ${{ success() && env.SENTRY_AUTH_TOKEN != '' }}
+        run: pnpm exec sentry-cli snapshots upload .vitest/sentry/__screenshots__ --app-id skycast-web
+
+      # The report embeds every screenshot already. Don't publish them twice.
+      - name: Remove screenshots from the report directory
+        if: ${{ !cancelled() }}
+        run: rm -rf .vitest/sentry
+
+      # Upload the HTML report even when tests fail. Pull requests get a regular
+      # artifact, other runs deploy it to GitHub Pages.
       - name: Upload HTML report (pull request)
         if: ${{ !cancelled() && github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v7
@@ -61,40 +94,6 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: .vitest
-
-  # Posts the failed screenshots (reference / actual / diff) as a PR comment.
-  # The images are pushed to a `vrt/pr-<number>` branch and shown through
-  # raw.githubusercontent.com. See scripts/vrt-comment.mjs.
-  # Fork PRs get a read-only token, so they only get the vitest-report artifact.
-  visual-diff-comment:
-    needs: test
-    if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # push the images to the vrt/pr-<number> branch
-      pull-requests: write # create and update the comment
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          sparse-checkout: scripts
-
-      # Missing when the test job failed before running the tests; the script
-      # then leaves the comment unchanged.
-      - name: Download HTML report
-        uses: actions/download-artifact@v8
-        continue-on-error: true
-        with:
-          name: vitest-report
-          path: report
-
-      - name: Post visual differences
-        uses: actions/github-script@v9
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          script: |
-            const { default: run } = await import(`${process.env.GITHUB_WORKSPACE}/scripts/vrt-comment.mjs`);
-            await run({ github, context, core, reportDir: "report", token: process.env.GITHUB_TOKEN });
 
   deploy-report:
     needs: test
